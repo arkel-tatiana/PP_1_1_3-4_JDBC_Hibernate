@@ -8,65 +8,68 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class UserDaoJDBCImpl implements UserDao {
+    Connection connect = null;
     public UserDaoJDBCImpl() {
 
     }
 
-    public void createUsersTable() {//1
+    public void createUsersTable() throws SQLException {//1
         String sql = "CREATE TABLE IF NOT EXISTS users" +
                 "(id int not null auto_increment," +
                 "name VARCHAR(45) not null," +
                 "lastName VARCHAR(50) not null," +
                 "age int," +
                 "PRIMARY KEY (id))";
-        try (Statement statement = Util.getConnection().createStatement()) {
-            statement.executeUpdate(sql);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            //throw new RuntimeException(e);
-        }
+        connectStat(sql);
 
     }
 
-    public void dropUsersTable() {//1
+    public void dropUsersTable() throws SQLException {//1
         String sql = "DROP TABLE IF EXISTS users";
-        try (Statement statement = Util.getConnection().createStatement()) {
-            statement.executeUpdate(sql);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            //throw new RuntimeException(e);
-        }
+        connectStat(sql);
     }
 
-    public void saveUser(String name, String lastName, byte age) {//4
+    public void saveUser(String name, String lastName, byte age) throws SQLException {//4
         String sql = "INSERT INTO users (name, lastName, age) VALUES (?, ?, ?)";
-        try (PreparedStatement preparedStatement = Util.getConnection().prepareStatement(sql)) {
-            preparedStatement.setString(1, name);
-            preparedStatement.setString(2, lastName);
-            preparedStatement.setByte(3, age);
-            preparedStatement.executeUpdate();
+        try {
+            connect = Util.getConnection();
+            PreparedStatement preStat = connect.prepareStatement(sql);
+            connect.setAutoCommit(false);
+            preStat.setString(1, name);
+            preStat.setString(2, lastName);
+            preStat.setByte(3, age);
+            preStat.executeUpdate();
+            connect.commit();
         } catch (SQLException e) {
             e.printStackTrace();
+            connect.rollback();
             //throw new RuntimeException(e);
         }
     }
 
-    public void removeUserById(long id) {//5
+    public void removeUserById(long id) throws SQLException {//5
         String sql = "DELETE FROM users where id = (?)";
-        try (PreparedStatement preparedStatement = Util.getConnection().prepareStatement(sql)) {
-            preparedStatement.setLong(1, id);
-            preparedStatement.executeUpdate();
+        try {
+            connect = Util.getConnection();
+            PreparedStatement preStat = connect.prepareStatement(sql);
+            connect.setAutoCommit(false);
+            preStat.setLong(1, id);
+            preStat.executeUpdate();
+            connect.commit();
         } catch (SQLException e) {
             e.printStackTrace();
-            //throw new RuntimeException(e);
+            connect.rollback();
         }
     }
 
-    public List<User> getAllUsers() {
+    public List<User> getAllUsers() throws SQLException {
         List <User> listUser = new ArrayList<>();
         String sql = "SELECT * FROM users";
-        try (Statement statement = Util.getConnection().createStatement()) {
-            ResultSet resSet = statement.executeQuery(sql);
+        try {
+            connect = Util.getConnection();
+            Statement stat = connect.createStatement();
+            connect.setAutoCommit(false);
+            ResultSet resSet = stat.executeQuery(sql);
             while (resSet.next()) {
                 User user = new User();
                 user.setId(resSet.getLong("id"));
@@ -75,20 +78,29 @@ public class UserDaoJDBCImpl implements UserDao {
                 user.setAge(resSet.getByte("age"));
                 listUser.add(user);
             }
+            connect.commit();
         } catch (SQLException e) {
             e.printStackTrace();
-            //throw new RuntimeException(e);
-        } finally {
-            return listUser;
+            connect.rollback();
         }
-    }//6
+        return listUser;
+    }
 
-    public void cleanUsersTable() {//3
+    public void cleanUsersTable() throws SQLException {//3
         String sql = "TRUNCATE users";
-        try (Statement statement = Util.getConnection().createStatement()) {
-            statement.executeUpdate(sql);
+        connectStat(sql);
+    }
+
+    private void connectStat(String sql) throws SQLException {
+        try {
+            connect = Util.getConnection();
+            Statement stat = connect.createStatement();
+            connect.setAutoCommit(false);
+            stat.executeUpdate(sql);
+            connect.commit();
         } catch (SQLException e) {
             e.printStackTrace();
+            connect.rollback();
             //throw new RuntimeException(e);
         }
     }
