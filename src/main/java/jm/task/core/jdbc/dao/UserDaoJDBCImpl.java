@@ -21,7 +21,6 @@ public class UserDaoJDBCImpl implements UserDao {
                 "age int," +
                 "PRIMARY KEY (id))";
         connectStat(sql);
-
     }
 
     public void dropUsersTable() throws SQLException {//1
@@ -44,6 +43,8 @@ public class UserDaoJDBCImpl implements UserDao {
             e.printStackTrace();
             connect.rollback();
             //throw new RuntimeException(e);
+        } finally {
+            connect.close();
         }
     }
 
@@ -59,6 +60,8 @@ public class UserDaoJDBCImpl implements UserDao {
         } catch (SQLException e) {
             e.printStackTrace();
             connect.rollback();
+        } finally {
+            connect.close();
         }
     }
 
@@ -82,6 +85,8 @@ public class UserDaoJDBCImpl implements UserDao {
         } catch (SQLException e) {
             e.printStackTrace();
             connect.rollback();
+        } finally {
+            connect.close();
         }
         return listUser;
     }
@@ -102,6 +107,8 @@ public class UserDaoJDBCImpl implements UserDao {
             e.printStackTrace();
             connect.rollback();
             //throw new RuntimeException(e);
+        } finally {
+            connect.close();
         }
     }
 }
